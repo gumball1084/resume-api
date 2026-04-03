@@ -1,0 +1,225 @@
+openapi: 3.0.0
+info:
+  title: Resume Analyzer & Job Match API
+  description: |
+    Powerful API to analyze resumes for ATS compatibility, extract skills, 
+    and score how well a resume matches any job description.
+    
+    **Perfect for:**
+    - Job boards and career platforms
+    - HR tech and recruitment tools
+    - Career coaching apps
+    - Resume builders
+    - Applicant tracking systems
+  version: "1.0.0"
+  contact:
+    name: API Support
+
+servers:
+  - url: https://YOUR-APP.railway.app
+    description: Production Server
+
+paths:
+  /health:
+    get:
+      summary: Health Check
+      description: Check if the API is running
+      responses:
+        "200":
+          description: API is operational
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+                  timestamp:
+                    type: string
+                    example: "2026-04-03T12:00:00.000Z"
+
+  /analyze/resume:
+    post:
+      summary: Analyze Resume
+      description: |
+        Analyze a resume and get:
+        - ATS compatibility score (0-100)
+        - Letter grade (A-F)
+        - Issues found
+        - Extracted skills (technical & soft)
+        - Improvement suggestions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resume_text
+              properties:
+                resume_text:
+                  type: string
+                  description: Full text content of the resume (plain text)
+                  example: "Jane Doe | jane@email.com | linkedin.com/in/janedoe\n\nSUMMARY\n5+ years in software engineering...\n\nEXPERIENCE\nSenior Developer at TechCo (2021-2024)\n• Built React apps serving 50k users\n• Reduced load time by 35%..."
+      responses:
+        "200":
+          description: Resume analysis results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResumeAnalysisResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /analyze/job-match:
+    post:
+      summary: Job Match Score
+      description: |
+        Score how well a resume matches a specific job description.
+        Returns keyword match percentage, missing keywords, and recommendations.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resume_text
+                - job_description
+              properties:
+                resume_text:
+                  type: string
+                  description: Full text of the resume
+                job_description:
+                  type: string
+                  description: Full text of the job posting
+      responses:
+        "200":
+          description: Job match analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobMatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /analyze/full:
+    post:
+      summary: Full Analysis (Premium)
+      description: |
+        Combined analysis: ATS score + job match + skill extraction + suggestions.
+        The most comprehensive endpoint — ideal as your main integration point.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resume_text
+              properties:
+                resume_text:
+                  type: string
+                  description: Full text of the resume
+                job_description:
+                  type: string
+                  description: Optional job description to match against
+      responses:
+        "200":
+          description: Full analysis results
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /extract/skills:
+    post:
+      summary: Extract Skills
+      description: Lightweight endpoint to extract technical and soft skills from resume text.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resume_text
+              properties:
+                resume_text:
+                  type: string
+      responses:
+        "200":
+          description: Extracted skills
+
+components:
+  schemas:
+    ResumeAnalysisResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            ats_score:
+              type: integer
+              description: ATS compatibility score (0-100)
+              example: 78
+            grade:
+              type: string
+              description: Letter grade
+              example: B
+            issues:
+              type: array
+              items:
+                type: string
+            skills:
+              type: object
+              properties:
+                technical:
+                  type: array
+                  items:
+                    type: string
+                soft:
+                  type: array
+                  items:
+                    type: string
+            suggestions:
+              type: array
+              items:
+                type: object
+
+    JobMatchResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        data:
+          type: object
+          properties:
+            match_score:
+              type: integer
+              example: 72
+            match_level:
+              type: string
+              example: "Good Match"
+            matched_keywords:
+              type: array
+              items:
+                type: string
+            missing_keywords:
+              type: array
+              items:
+                type: string
+
+  responses:
+    BadRequest:
+      description: Missing or invalid parameters
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+              status:
+                type: integer
